@@ -61,9 +61,9 @@ function App() {
         const sessionReports = reports.filter(r => r.checkInId === activeCheckIn.id);
         
         // Always generate report on checkout, even if empty (to log the shift hours)
-        const headers = ['ID', 'Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
+        // Using semicolon (;) as delimiter for Excel compatibility in Brazil
+        const headers = ['Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
         const rows = sessionReports.map(r => [
-          r.id,
           new Date(r.timestamp).toLocaleString('pt-BR'),
           activeCheckIn.postName,
           r.type,
@@ -75,7 +75,7 @@ function App() {
           r.notes ? r.notes.replace(/"/g, '""').replace(/\n/g, ' ') : '' // Escape quotes and newlines
         ].map(field => `"${field}"`)); // Quote all fields
 
-        const csvBody = [headers.join(','), ...rows.map(r => r.join(','))].join("\n");
+        const csvBody = [headers.join(';'), ...rows.map(r => r.join(';'))].join("\n");
         
         const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
         const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
@@ -101,7 +101,8 @@ function App() {
 
   const handleSubmitReport = (report: IncidentReport) => {
     setReports(prev => [report, ...prev]);
-    setCurrentView(ViewState.HISTORY);
+    // REMOVED: setCurrentView(ViewState.HISTORY); 
+    // User stays on the form to allow quick subsequent entries or just confirmation.
   };
 
   return (

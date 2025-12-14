@@ -12,7 +12,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ reports, checkIns }) =
   const [uploading, setUploading] = useState(false);
 
   const handleExport = async (filename: string, rows: string[][]) => {
-    const csvBody = rows.map(e => e.join(",")).join("\n");
+    // Use semicolon (;) delimiter for Excel cell separation
+    const csvBody = rows.map(e => e.join(";")).join("\n");
     setUploading(true);
     await uploadToCentral(filename, csvBody);
     setUploading(false);
@@ -20,11 +21,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ reports, checkIns }) =
 
   const downloadIncidentsCSV = () => {
     const rows = [
-      ['ID', 'Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'],
+      ['Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'],
       ...reports.map(r => {
         const checkIn = checkIns.find(c => c.id === r.checkInId);
         return [
-          r.id,
           new Date(r.timestamp).toLocaleString(),
           checkIn?.postName || 'N/A',
           r.type,
@@ -42,14 +42,13 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ reports, checkIns }) =
 
   const downloadCheckInsCSV = (date: string, records: CheckInRecord[]) => {
     const rows = [
-      ['ID', 'Data', 'Posto', 'Inicio', 'Fim', 'Duracao_Horas', 'Latitude', 'Longitude'],
+      ['Data', 'Posto', 'Inicio', 'Fim', 'Duracao_Horas', 'Latitude', 'Longitude'],
       ...records.map(c => {
         const start = new Date(c.timestamp);
         const end = c.checkOutTimestamp ? new Date(c.checkOutTimestamp) : null;
         const duration = end ? ((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(2) : 'Em andamento';
         
         return [
-          c.id,
           date,
           c.postName,
           start.toLocaleTimeString(),

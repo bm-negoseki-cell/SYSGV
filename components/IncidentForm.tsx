@@ -21,8 +21,9 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
   const [victimGender, setVictimGender] = useState<'M' | 'F' | 'Outro'>('M');
   const [notes, setNotes] = useState('');
 
-  // Validation Errors State
+  // UI States
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSuccess, setShowSuccess] = useState(false);
 
   if (!checkInId) {
     return (
@@ -124,7 +125,10 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
     setVictimName('');
     setVictimAge('');
     setErrors({});
-    alert('Registro salvo com sucesso!');
+    
+    // Show Success Message
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   return (
@@ -267,9 +271,18 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
           </div>
         )}
 
+        {showSuccess && (
+          <div className="mb-4 mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-2 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold text-lg">Registro incluído com sucesso!</span>
+          </div>
+        )}
+
         <button 
           type="submit"
-          className={`mt-6 w-full py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 ${activeTab === 'CRITICAL' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+          className={`mt-4 w-full py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 ${activeTab === 'CRITICAL' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
         >
           REGISTRAR {activeTab === 'ROUTINE' ? 'OCORRÊNCIA' : 'INCIDENTE'}
         </button>

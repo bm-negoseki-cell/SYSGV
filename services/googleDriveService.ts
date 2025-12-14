@@ -1,64 +1,68 @@
 /**
  * SERVICE FOR CENTRALIZED DATA EXPORT
  * 
- * Since the requirement is to save to a specific Drive account WITHOUT the end-user (lifeguard) 
- * logging in, we cannot use Client-Side OAuth (gapi). That requires the user's permission.
+ * Instruções para configurar o salvamento automático no SEU Google Drive/Gmail:
  * 
- * To achieve "Save to System Drive", the standard approach is posting the data to a 
- * Webhook (e.g., Google Apps Script Web App, Zapier, or a Node backend).
- * 
- * This service implements the logic to:
- * 1. Force a local download (Data Safety).
- * 2. Attempt to POST the data to a configured Endpoint.
+ * 1. Crie um script em https://script.google.com/
+ * 2. Cole o código de backend (doPost) fornecido.
+ * 3. Publique como "App da Web" -> Executar como "Eu" -> Acesso "Qualquer pessoa".
+ * 4. Cole a URL gerada na variável CENTRAL_WEBHOOK_URL abaixo.
  */
 
-// Placeholder URL. In a real deployment, you would deploy a Google Apps Script
-// linked to your Sheet and paste the Web App URL here.
-const CENTRAL_WEBHOOK_URL = ''; // e.g. 'https://script.google.com/macros/s/XXX/exec'
+// COLE AQUI A URL DO SEU GOOGLE APPS SCRIPT (ex: https://script.google.com/macros/s/.../exec)
+const CENTRAL_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby4H-zhiZ6ejhiHN6JEKTlAHfBXyKHim3w6p6wEfEY1NDodimkcsG-5IEJgqZCm-Cd0/exec'; 
 
 export const uploadToCentral = async (fileName: string, csvContent: string): Promise<boolean> => {
   // 1. ALWAYS Force Local Download first (Critical Data Safety)
+  // Isso garante que o guarda-vidas tenha o arquivo mesmo se ficar sem internet.
   try {
-    const csvData = "data:text/csv;charset=utf-8," + encodeURI(csvContent);
+    const bom = "\uFEFF"; // Byte Order Mark para UTF-8 no Excel
+    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
     const link = document.createElement("a");
-    link.setAttribute("href", csvData);
+    link.setAttribute("href", url);
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   } catch (e) {
     console.error("Local download failed", e);
   }
 
-  // 2. Attempt Upload to Central Server (if URL is configured)
+  // 2. Upload to Central Server (Google Drive/Gmail via Apps Script)
   if (CENTRAL_WEBHOOK_URL) {
     try {
-      const response = await fetch(CENTRAL_WEBHOOK_URL, {
+      // Usamos 'no-cors' pois o Google Apps Script não suporta CORS padrão facilmente para POST
+      // Isso significa que enviaremos os dados ("fire and forget"), mas não leremos a resposta detalhada.
+      await fetch(CENTRAL_WEBHOOK_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain;charset=utf-8', // Apps Script lê melhor como text/plain no corpo
         },
         body: JSON.stringify({
           filename: fileName,
           content: csvContent,
           timestamp: new Date().toISOString()
         }),
-        mode: 'no-cors' // Often needed for Google Apps Script Web Hooks
+        mode: 'no-cors' 
       });
-      console.log("Sent to central server", response);
+      console.log("Dados enviados para o servidor central (Google Drive/Gmail).");
       return true;
     } catch (error) {
-      console.error("Error sending to central server:", error);
-      // We don't throw here because local download already saved the data
+      console.error("Erro ao enviar para o servidor central:", error);
+      // Não lançamos erro para o usuário final, pois o download local já garantiu os dados.
       return false;
     }
   } else {
-    console.log("Central Webhook URL not configured. Data saved locally only.");
-    return true; // Local save successful
+    console.log("URL do Webhook não configurada. Apenas salvo localmente.");
+    return true; 
   }
 };
 
-// Deprecated functions kept as stubs to prevent import errors if any remain
+// Deprecated functions kept as stubs
 export const initGoogleDrive = (cb: any) => { if(cb) cb(false); };
 export const signInToDrive = async () => false;
 export const getDriveToken = () => null;
