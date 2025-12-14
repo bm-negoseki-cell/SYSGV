@@ -1,0 +1,7 @@
+{
+  "name": "GV Litoral PR - App Operacional",
+  "description": "Sistema de suporte operacional para Guarda-Vidas do Litoral do Paraná. Check-in, Tábua de Marés e Registro de Ocorrências.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
