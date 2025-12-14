@@ -81,7 +81,7 @@ function App() {
         const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
         const fileName = `Turno_${safePostName}_${dateStr}.csv`;
 
-        // Upload to Central (Simulated) + Force Local Download
+        // Upload to Central (Google Drive/Gmail) + Force Local Download
         await uploadToCentral(fileName, csvBody);
         alert("Turno finalizado. O relatório foi gerado e salvo.");
       }
@@ -101,8 +101,6 @@ function App() {
 
   const handleSubmitReport = (report: IncidentReport) => {
     setReports(prev => [report, ...prev]);
-    // REMOVED: setCurrentView(ViewState.HISTORY); 
-    // User stays on the form to allow quick subsequent entries or just confirmation.
   };
 
   return (

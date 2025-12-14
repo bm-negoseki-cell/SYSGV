@@ -1,15 +1,10 @@
 /**
  * SERVICE FOR CENTRALIZED DATA EXPORT
  * 
- * Instruções para configurar o salvamento automático no SEU Google Drive/Gmail:
- * 
- * 1. Crie um script em https://script.google.com/
- * 2. Cole o código de backend (doPost) fornecido.
- * 3. Publique como "App da Web" -> Executar como "Eu" -> Acesso "Qualquer pessoa".
- * 4. Cole a URL gerada na variável CENTRAL_WEBHOOK_URL abaixo.
+ * Conectado ao Google Apps Script para backup automático no Google Drive e Gmail.
  */
 
-// COLE AQUI A URL DO SEU GOOGLE APPS SCRIPT (ex: https://script.google.com/macros/s/.../exec)
+// URL do Webhook configurada pelo usuário
 const CENTRAL_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby4H-zhiZ6ejhiHN6JEKTlAHfBXyKHim3w6p6wEfEY1NDodimkcsG-5IEJgqZCm-Cd0/exec'; 
 
 export const uploadToCentral = async (fileName: string, csvContent: string): Promise<boolean> => {
@@ -36,7 +31,9 @@ export const uploadToCentral = async (fileName: string, csvContent: string): Pro
   if (CENTRAL_WEBHOOK_URL) {
     try {
       // Usamos 'no-cors' pois o Google Apps Script não suporta CORS padrão facilmente para POST
-      // Isso significa que enviaremos os dados ("fire and forget"), mas não leremos a resposta detalhada.
+      // Isso significa que enviaremos os dados ("fire and forget").
+      // O browser vai enviar a requisição, mas não conseguiremos ler a resposta de sucesso/falha do Google.
+      // Assumimos sucesso se não houver erro de rede.
       await fetch(CENTRAL_WEBHOOK_URL, {
         method: 'POST',
         headers: {
