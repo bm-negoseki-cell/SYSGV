@@ -148,7 +148,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-5">
+      {/* Reduced padding for mobile (p-3) to ensure full width usage */}
+      <form onSubmit={handleSubmit} className="p-3 sm:p-5">
         
         {activeTab === 'ROUTINE' && (
           <div className="space-y-6">
@@ -172,15 +173,16 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade</label>
-              <div className="flex items-center gap-4">
-                <button type="button" onClick={() => setCount(Math.max(1, count - 1))} className="w-12 h-12 rounded-full bg-gray-200 text-gray-600 font-bold text-xl flex items-center justify-center active:bg-gray-300">-</button>
+              {/* Layout Fixed for Mobile: reduced gap, shrink-0 on buttons, justify-between */}
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
+                <button type="button" onClick={() => setCount(Math.max(1, count - 1))} className="w-12 h-12 shrink-0 rounded-full bg-gray-200 text-gray-600 font-bold text-xl flex items-center justify-center active:bg-gray-300">-</button>
                 <input 
                   type="number" 
                   value={count} 
                   onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 0))}
-                  className="flex-1 text-center border-gray-300 rounded-lg shadow-sm text-2xl font-bold py-2" 
+                  className="flex-1 min-w-0 text-center border-gray-300 rounded-lg shadow-sm text-2xl font-bold py-2" 
                 />
-                <button type="button" onClick={() => setCount(count + 1)} className="w-12 h-12 rounded-full bg-blue-900 text-white font-bold text-xl flex items-center justify-center active:bg-blue-800">+</button>
+                <button type="button" onClick={() => setCount(count + 1)} className="w-12 h-12 shrink-0 rounded-full bg-blue-900 text-white font-bold text-xl flex items-center justify-center active:bg-blue-800">+</button>
               </div>
             </div>
           </div>

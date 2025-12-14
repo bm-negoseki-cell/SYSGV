@@ -94,12 +94,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
   // Initialize Map when modal opens
   useEffect(() => {
     if (isSelectingPost && mapContainerRef.current && !mapInstanceRef.current) {
-      // Default center (Approx Middle of Pontal do Paraná - Ipanema/Praia de Leste)
-      const initialCenter: [number, number] = tempCoords 
-        ? [tempCoords.latitude, tempCoords.longitude] 
-        : [-25.650, -48.440];
-
-      const map = L.map(mapContainerRef.current).setView(initialCenter, 11);
+      
+      const map = L.map(mapContainerRef.current);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
@@ -127,15 +123,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
           .openPopup();
       }
 
+      // Create Markers and Calculate Bounds
+      const markersGroup = L.featureGroup();
+      
+      if (tempCoords) {
+         L.marker([tempCoords.latitude, tempCoords.longitude]).addTo(markersGroup);
+      }
+
       // Add Markers for all posts
       POSTS_DATA.forEach(post => {
         const marker = L.marker([post.lat, post.lng], { icon: postIcon }).addTo(map);
+        marker.addTo(markersGroup); // Add to group for bounds calculation
         marker.on('click', () => {
           setSelectedPost(post.name);
           map.setView([post.lat, post.lng], 13);
         });
         marker.bindPopup(`<b>${post.name}</b>`);
       });
+
+      // Fit map to show all markers (User + All Posts)
+      // This ensures PGV Primavera and all others are visible
+      if (markersGroup.getLayers().length > 0) {
+        map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+      } else {
+        // Fallback center if something goes wrong
+        map.setView([-25.650, -48.440], 11);
+      }
 
       mapInstanceRef.current = map;
     }
