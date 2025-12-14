@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { IncidentForm } from './components/IncidentForm';
 import { ActivityLog } from './components/ActivityLog';
 import { CheckInRecord, IncidentReport, ViewState, Coordinates } from './types';
+import { uploadToCentral } from './services/googleDriveService';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
@@ -53,45 +54,40 @@ function App() {
     setCurrentCheckInId(newCheckIn.id);
   };
 
-  const handleCheckOut = () => {
+  const handleCheckOut = async () => {
     // AUTOMATIC EXPORT: Generate CSV for the current shift's incidents
-    // Wrapped in try-catch so checkout proceeds even if download fails/blocks
     try {
       if (activeCheckIn) {
         const sessionReports = reports.filter(r => r.checkInId === activeCheckIn.id);
         
-        if (sessionReports.length > 0) {
-          const headers = ['ID', 'Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
-          const rows = sessionReports.map(r => [
-            r.id,
-            new Date(r.timestamp).toLocaleString('pt-BR'),
-            activeCheckIn.postName,
-            r.type,
-            r.count,
-            r.drowningGrade || '',
-            r.victim?.name || '',
-            r.victim?.age || '',
-            r.victim?.gender || '',
-            r.notes ? r.notes.replace(/"/g, '""').replace(/\n/g, ' ') : '' // Escape quotes and newlines
-          ].map(field => `"${field}"`)); // Quote all fields
+        // Always generate report on checkout, even if empty (to log the shift hours)
+        const headers = ['ID', 'Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
+        const rows = sessionReports.map(r => [
+          r.id,
+          new Date(r.timestamp).toLocaleString('pt-BR'),
+          activeCheckIn.postName,
+          r.type,
+          r.count,
+          r.drowningGrade || '',
+          r.victim?.name || '',
+          r.victim?.age || '',
+          r.victim?.gender || '',
+          r.notes ? r.notes.replace(/"/g, '""').replace(/\n/g, ' ') : '' // Escape quotes and newlines
+        ].map(field => `"${field}"`)); // Quote all fields
 
-          const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join("\n");
-          const encodedUri = encodeURI(csvContent);
-          const link = document.createElement("a");
-          link.setAttribute("href", encodedUri);
-          
-          const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-          const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
-          // Filename separates by Post as requested
-          link.setAttribute("download", `Ocorrencias_${safePostName}_${dateStr}.csv`);
-          
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
+        const csvBody = [headers.join(','), ...rows.map(r => r.join(','))].join("\n");
+        
+        const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+        const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
+        const fileName = `Turno_${safePostName}_${dateStr}.csv`;
+
+        // Upload to Central (Simulated) + Force Local Download
+        await uploadToCentral(fileName, csvBody);
+        alert("Turno finalizado. O relatório foi gerado e salvo.");
       }
     } catch (error) {
-      console.error("Falha na exportação automática (prosseguindo com logout):", error);
+      console.error("Falha na exportação automática:", error);
+      alert("Erro ao gerar relatório automático.");
     }
 
     // Update the current check-in with the checkout timestamp
@@ -109,7 +105,10 @@ function App() {
   };
 
   return (
-    <Layout currentView={currentView} setView={setCurrentView}>
+    <Layout 
+      currentView={currentView} 
+      setView={setCurrentView}
+    >
       {currentView === ViewState.DASHBOARD && (
         <Dashboard 
           currentCheckIn={activeCheckIn} 

@@ -7,21 +7,35 @@ interface LayoutProps {
   setView: (view: ViewState) => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }) => {
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  currentView, 
+  setView
+}) => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col font-sans">
       {/* Header */}
-      <header className="bg-military-900 text-white p-4 shadow-md sticky top-0 z-50">
+      <header className="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50">
         <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center text-military-900 font-bold text-xl border-2 border-white">
-              GV
+          <div className="flex items-center gap-3">
+            {/* Stylized Wave Icon - Custom SVG matching reference */}
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-blue-200 shadow-sm overflow-hidden p-1">
+               <svg viewBox="0 0 100 100" className="w-full h-full text-blue-700" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                 {/* Main Wave Body */}
+                 <path d="M10,85 C15,80 20,75 25,78 C35,85 45,60 55,45 C65,30 80,20 90,35 C95,42 92,55 85,60 C80,63 75,55 80,45 C82,40 85,38 88,38 C82,28 70,30 60,40 C50,50 40,75 30,80 C20,85 10,85 10,85 Z" />
+                 {/* The Curl/Lip */}
+                 <path d="M90,35 C80,10 50,15 35,40 C25,55 20,70 15,85 C15,85 5,85 2,80 C5,60 20,30 40,15 C60,0 85,5 90,35 Z" />
+                 {/* Internal Detail/Foam */}
+                 <path d="M45,35 C55,25 70,22 80,32 C75,28 65,28 55,38 C50,42 48,40 45,35 Z" fill="currentColor" opacity="0.8"/>
+               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight">Operacional</h1>
-              <p className="text-xs text-military-100">Corpo de Bombeiros - PR</p>
+              <h1 className="text-xl font-bold leading-tight tracking-tight">SYSGV</h1>
+              <p className="text-xs text-blue-200">Sistema Operacional - PR</p>
             </div>
           </div>
+          
+          {/* Drive Button Removed as requested */}
         </div>
       </header>
 
@@ -35,8 +49,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
         <div className="flex justify-around items-center h-16 max-w-4xl mx-auto">
           <button
             onClick={() => setView(ViewState.DASHBOARD)}
-            className={`flex flex-col items-center justify-center w-full h-full ${
-              currentView === ViewState.DASHBOARD ? 'text-military-900' : 'text-gray-400'
+            className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+              currentView === ViewState.DASHBOARD ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,8 +61,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
           
           <button
             onClick={() => setView(ViewState.FORM)}
-            className={`flex flex-col items-center justify-center w-full h-full ${
-              currentView === ViewState.FORM ? 'text-military-900' : 'text-gray-400'
+            className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+              currentView === ViewState.FORM ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,8 +73,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
 
           <button
             onClick={() => setView(ViewState.HISTORY)}
-            className={`flex flex-col items-center justify-center w-full h-full ${
-              currentView === ViewState.HISTORY ? 'text-military-900' : 'text-gray-400'
+            className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+              currentView === ViewState.HISTORY ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

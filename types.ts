@@ -41,6 +41,8 @@ export interface WeatherInfo {
   tide: string; // Summary string
   tideEvents?: TideEvent[]; // Detailed table
   waveHeight: string;
+  sunset?: string;
+  uvIndex?: string;
   lastUpdated: string;
   sources: { title: string; uri: string }[];
 }

@@ -131,13 +131,13 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="flex border-b border-gray-200">
         <button
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === 'ROUTINE' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === 'ROUTINE' ? 'bg-blue-50 text-blue-900 border-b-2 border-blue-900' : 'text-gray-500 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('ROUTINE')}
         >
           ROTINA
         </button>
         <button
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === 'CRITICAL' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-500 hover:bg-gray-50'}`}
+          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === 'CRITICAL' ? 'bg-red-50 text-red-600 border-b-2 border-red-600' : 'text-gray-500 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('CRITICAL')}
         >
           INCIDENTE GRAVE
@@ -151,17 +151,17 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Registro</label>
               <div className="grid grid-cols-1 gap-2">
-                <button type="button" onClick={() => setRoutineType('ORIENTACAO')} className={`p-3 rounded-lg border text-left flex justify-between items-center ${routineType === 'ORIENTACAO' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-300'}`}>
+                <button type="button" onClick={() => setRoutineType('ORIENTACAO')} className={`p-3 rounded-lg border text-left flex justify-between items-center ${routineType === 'ORIENTACAO' ? 'border-blue-900 bg-blue-50 ring-1 ring-blue-900' : 'border-gray-300'}`}>
                   <span className="font-semibold text-gray-800">Orientação a Banhista</span>
-                  {routineType === 'ORIENTACAO' && <span className="text-blue-600">✓</span>}
+                  {routineType === 'ORIENTACAO' && <span className="text-blue-900 font-bold">✓</span>}
                 </button>
-                <button type="button" onClick={() => setRoutineType('ADVERTENCIA')} className={`p-3 rounded-lg border text-left flex justify-between items-center ${routineType === 'ADVERTENCIA' ? 'border-yellow-500 bg-yellow-50 ring-1 ring-yellow-500' : 'border-gray-300'}`}>
+                <button type="button" onClick={() => setRoutineType('ADVERTENCIA')} className={`p-3 rounded-lg border text-left flex justify-between items-center ${routineType === 'ADVERTENCIA' ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-gray-300'}`}>
                   <span className="font-semibold text-gray-800">Advertência</span>
-                  {routineType === 'ADVERTENCIA' && <span className="text-yellow-600">✓</span>}
+                  {routineType === 'ADVERTENCIA' && <span className="text-yellow-700 font-bold">✓</span>}
                 </button>
                 <button type="button" onClick={() => setRoutineType('AGUA_VIVA')} className={`p-3 rounded-lg border text-left flex justify-between items-center ${routineType === 'AGUA_VIVA' ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500' : 'border-gray-300'}`}>
                   <span className="font-semibold text-gray-800">Incidente Água-Viva</span>
-                  {routineType === 'AGUA_VIVA' && <span className="text-purple-600">✓</span>}
+                  {routineType === 'AGUA_VIVA' && <span className="text-purple-600 font-bold">✓</span>}
                 </button>
               </div>
             </div>
@@ -176,7 +176,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
                   onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 0))}
                   className="flex-1 text-center border-gray-300 rounded-lg shadow-sm text-2xl font-bold py-2" 
                 />
-                <button type="button" onClick={() => setCount(count + 1)} className="w-12 h-12 rounded-full bg-blue-600 text-white font-bold text-xl flex items-center justify-center active:bg-blue-700">+</button>
+                <button type="button" onClick={() => setCount(count + 1)} className="w-12 h-12 rounded-full bg-blue-900 text-white font-bold text-xl flex items-center justify-center active:bg-blue-800">+</button>
               </div>
             </div>
           </div>
@@ -224,7 +224,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
                     placeholder="Nome Completo" 
                     value={victimName}
                     onChange={handleNameChange}
-                    className={`w-full rounded-md shadow-sm p-2 text-sm border ${errors.victimName ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                    className={`w-full rounded-md shadow-sm p-2 text-sm border ${errors.victimName ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-900'}`}
                   />
                   {errors.victimName && <p className="text-red-500 text-xs mt-1">{errors.victimName}</p>}
                 </div>
@@ -237,7 +237,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({ checkInId, onSubmit 
                       placeholder="Idade" 
                       value={victimAge}
                       onChange={handleAgeChange}
-                      className={`w-full rounded-md shadow-sm p-2 text-sm border ${errors.victimAge ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                      className={`w-full rounded-md shadow-sm p-2 text-sm border ${errors.victimAge ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-900'}`}
                     />
                     {errors.victimAge && <p className="text-red-500 text-xs mt-1">{errors.victimAge}</p>}
                   </div>

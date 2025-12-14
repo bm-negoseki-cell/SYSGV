@@ -34,13 +34,17 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
     1. Temperatura atual (ex: 28°C).
     2. Condição do tempo (ex: Ensolarado, Nublado, Chuva).
     3. Altura das ondas aproximada.
-    4. TÁBUA DE MARÉS COMPLETA PARA HOJE: Liste todos os horários de maré Alta e Baixa para o dia de hoje no porto mais próximo (Paranaguá ou Pontal do Sul).
+    4. Horário do pôr do sol hoje (ex: 18:45).
+    5. Índice UV máximo previsto para hoje (ex: 8 - Muito Alto).
+    6. TÁBUA DE MARÉS COMPLETA PARA HOJE: Liste todos os horários de maré Alta e Baixa para o dia de hoje no porto mais próximo (Paranaguá ou Pontal do Sul).
 
     Responda APENAS com um JSON válido (sem markdown block) no seguinte formato estrito:
     {
       "temperature": "string",
       "condition": "string",
       "waveHeight": "string",
+      "sunset": "string",
+      "uvIndex": "string",
       "tideSummary": "string (resumo ex: Baixa 10h, Alta 16h)",
       "tideEvents": [
         { "time": "HH:MM", "height": "0.0m", "type": "Alta" },
@@ -75,6 +79,8 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
           condition: "Erro ao obter dados",
           tideSummary: "N/D",
           waveHeight: "N/D",
+          sunset: "--:--",
+          uvIndex: "--",
           tideEvents: []
         };
       }
@@ -92,6 +98,8 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
       tide: data.tideSummary || "Consulte a tabela oficial",
       tideEvents: Array.isArray(data.tideEvents) ? data.tideEvents : [],
       waveHeight: data.waveHeight || "--",
+      sunset: data.sunset || "--:--",
+      uvIndex: data.uvIndex || "--",
       lastUpdated: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
       sources: sources
     };
