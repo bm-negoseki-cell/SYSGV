@@ -43,12 +43,30 @@ function App() {
 
   const activeCheckIn = checkIns.find(c => c.id === currentCheckInId) || null;
 
+  // Helper to determine shift based on current time
+  const getShiftType = (date: Date): 'MANHA' | 'TARDE' => {
+    const hour = date.getHours();
+    const minutes = date.getMinutes();
+    
+    // Turno Manhã: Até 13:30
+    // Se for antes das 13h OU (são 13h E minutos < 30) -> Manhã
+    if (hour < 13 || (hour === 13 && minutes < 30)) {
+      return 'MANHA';
+    }
+    // Caso contrário -> Tarde
+    return 'TARDE';
+  };
+
   const handleCheckIn = (location: Coordinates, postName: string) => {
+    const now = new Date();
+    const shift = getShiftType(now);
+
     const newCheckIn: CheckInRecord = {
       id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
+      timestamp: now.toISOString(),
       location,
-      postName
+      postName,
+      shift: shift
     };
     setCheckIns(prev => [newCheckIn, ...prev]);
     setCurrentCheckInId(newCheckIn.id);
@@ -61,11 +79,15 @@ function App() {
         const sessionReports = reports.filter(r => r.checkInId === activeCheckIn.id);
         const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
         
+        // Include Shift in Filename
+        const currentShift = activeCheckIn.shift || getShiftType(new Date(activeCheckIn.timestamp));
+
         // 1. Prepare CSV Content (For Local Download / Backup File)
-        const headers = ['Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
+        const headers = ['Data/Hora', 'Posto', 'Turno', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
         const rows = sessionReports.map(r => [
           new Date(r.timestamp).toLocaleString('pt-BR'),
           activeCheckIn.postName,
+          currentShift,
           r.type,
           r.count,
           r.drowningGrade || '',
@@ -77,12 +99,14 @@ function App() {
 
         const csvBody = [headers.join(';'), ...rows.map(r => r.join(';'))].join("\n");
         const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
-        const fileName = `Turno_${safePostName}_${dateStr}.csv`;
+        
+        // Example: Turno_MANHA_PGV_Matinhos_01_20-12-2024.csv
+        const fileName = `Turno_${currentShift}_${safePostName}_${dateStr}.csv`;
 
         // Upload to Central (Fast mode, only CSV backup)
         await uploadToCentral(fileName, csvBody);
         
-        alert("Turno finalizado. Dados salvos e sincronizados.");
+        alert(`Turno ${currentShift} finalizado. Dados salvos e sincronizados.`);
       }
     } catch (error) {
       console.error("Falha na exportação automática:", error);

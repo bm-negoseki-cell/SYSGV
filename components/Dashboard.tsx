@@ -62,7 +62,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
   const [tempCoords, setTempCoords] = useState<Coordinates | null>(null);
   const [selectedPost, setSelectedPost] = useState<string>("");
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-
+  const [checkoutWarningMsg, setCheckoutWarningMsg] = useState("");
+  
   // Map Refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -95,71 +96,82 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
   useEffect(() => {
     if (isSelectingPost && mapContainerRef.current && !mapInstanceRef.current) {
       
-      const map = L.map(mapContainerRef.current);
+      // FIX: Add delay to allow modal animation to finish before calculating map size/bounds
+      // Increased to 500ms to be absolutely sure container has final dimensions
+      const initTimer = setTimeout(() => {
+        if (!mapContainerRef.current) return;
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+        const map = L.map(mapContainerRef.current);
 
-      // Custom Icon for Posts - Standard Blue
-      const postIcon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div style="background-color: #2563eb; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
-      });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-      // Custom Icon for User Location - Red
-      if (tempCoords) {
-        const userIcon = L.divIcon({
-          className: 'user-pos-icon',
-          html: `<div style="background-color: #dc2626; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.3);"></div>`,
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
+        // Custom Icon for Posts - Standard Blue
+        const postIcon = L.divIcon({
+          className: 'custom-div-icon',
+          html: `<div style="background-color: #2563eb; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
         });
-        L.marker([tempCoords.latitude, tempCoords.longitude], { icon: userIcon })
-          .addTo(map)
-          .bindPopup("Sua Localização")
-          .openPopup();
-      }
 
-      // Create Markers and Calculate Bounds
-      const markersGroup = L.featureGroup();
-      
-      if (tempCoords) {
-         L.marker([tempCoords.latitude, tempCoords.longitude]).addTo(markersGroup);
-      }
+        // Custom Icon for User Location - Red
+        if (tempCoords) {
+          const userIcon = L.divIcon({
+            className: 'user-pos-icon',
+            html: `<div style="background-color: #dc2626; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.3);"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          L.marker([tempCoords.latitude, tempCoords.longitude], { icon: userIcon })
+            .addTo(map)
+            .bindPopup("Sua Localização")
+            .openPopup();
+        }
 
-      // Add Markers for all posts
-      POSTS_DATA.forEach(post => {
-        const marker = L.marker([post.lat, post.lng], { icon: postIcon }).addTo(map);
-        marker.addTo(markersGroup); // Add to group for bounds calculation
-        marker.on('click', () => {
-          setSelectedPost(post.name);
-          map.setView([post.lat, post.lng], 13);
+        // Create Markers and Calculate Bounds
+        const markersGroup = L.featureGroup();
+        
+        if (tempCoords) {
+           L.marker([tempCoords.latitude, tempCoords.longitude]).addTo(markersGroup);
+        }
+
+        // Add Markers for all posts
+        POSTS_DATA.forEach(post => {
+          const marker = L.marker([post.lat, post.lng], { icon: postIcon }).addTo(map);
+          marker.addTo(markersGroup); // Add to group for bounds calculation
+          marker.on('click', () => {
+            setSelectedPost(post.name);
+            map.setView([post.lat, post.lng], 13);
+          });
+          marker.bindPopup(`<b>${post.name}</b>`);
         });
-        marker.bindPopup(`<b>${post.name}</b>`);
-      });
 
-      // Fit map to show all markers (User + All Posts)
-      // This ensures PGV Primavera and all others are visible
-      if (markersGroup.getLayers().length > 0) {
-        map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
-      } else {
-        // Fallback center if something goes wrong
-        map.setView([-25.650, -48.440], 11);
-      }
+        // Fit map to show all markers (User + All Posts)
+        // This ensures PGV Primavera and all others are visible
+        if (markersGroup.getLayers().length > 0) {
+          // IMPORTANT FIX: Invalidate size BEFORE fitting bounds. 
+          // This tells Leaflet the container size has changed (animation finished)
+          map.invalidateSize();
+          map.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+        } else {
+          // Fallback center if something goes wrong
+          map.invalidateSize();
+          map.setView([-25.650, -48.440], 11);
+        }
 
-      mapInstanceRef.current = map;
+        mapInstanceRef.current = map;
+      }, 500); // 500ms delay matches typical modal transition + safety buffer
+
+      // Cleanup map on unmount/close
+      return () => {
+        clearTimeout(initTimer);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+      };
     }
-
-    // Cleanup map on unmount/close
-    return () => {
-      if (!isSelectingPost && mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
   }, [isSelectingPost, tempCoords]);
 
   // Sync selectedPost with Map popup if selected via list
@@ -286,8 +298,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
   };
 
   const handleInitialCheckOutClick = () => {
+    if (!currentCheckIn) return;
+
     const now = new Date();
-    if (now.getHours() < 19) {
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+
+    let isEarly = false;
+    let requiredTimeMsg = "";
+
+    // Determine Logic based on Shift
+    if (currentCheckIn.shift === 'MANHA') {
+        // Manhã: Ends at 13:30. Warning before 13:30.
+        if (currentHour < 13 || (currentHour === 13 && currentMin < 30)) {
+            isEarly = true;
+            requiredTimeMsg = "13:30";
+        }
+    } else {
+        // Tarde (Default): Ends at 19:00. Warning before 19:00.
+        if (currentHour < 19) {
+            isEarly = true;
+            requiredTimeMsg = "19:00";
+        }
+    }
+
+    if (isEarly) {
+      setCheckoutWarningMsg(`Ainda não são ${requiredTimeMsg}.`);
       setShowCheckoutModal(true);
     } else {
       onCheckOut();
@@ -317,7 +353,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
                  </svg>
                </div>
                <h3 className="text-lg font-bold text-gray-900">Encerrar Turno Antecipadamente?</h3>
-               <p className="text-sm text-gray-500 mt-2">Ainda não são 19:00. Deseja realmente finalizar o serviço neste posto?</p>
+               <p className="text-sm text-gray-500 mt-2">{checkoutWarningMsg} Deseja realmente finalizar o serviço neste posto?</p>
              </div>
              <div className="flex gap-3">
                <button 
@@ -417,7 +453,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
-              <span className="font-semibold">EM SERVIÇO</span>
+              <span className="font-semibold">EM SERVIÇO ({currentCheckIn.shift || 'N/A'})</span>
             </div>
             <p className="text-sm text-gray-600"><strong>Posto:</strong> {currentCheckIn.postName}</p>
             <p className="text-sm text-gray-600"><strong>Início:</strong> {new Date(currentCheckIn.timestamp).toLocaleString()}</p>
@@ -455,7 +491,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
           </div>
         )}
       </div>
-
+      
       {/* Weather & Tide Card */}
       {currentCheckIn && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

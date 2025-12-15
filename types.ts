@@ -9,6 +9,7 @@ export interface CheckInRecord {
   checkOutTimestamp?: string; // New field for shift end
   location: Coordinates;
   postName: string; // e.g., "Posto Matinhos 01"
+  shift?: 'MANHA' | 'TARDE'; // Shift definition
 }
 
 export interface VictimData {

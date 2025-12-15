@@ -26,19 +26,22 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
   const todayDate = new Date().toLocaleDateString('pt-BR');
   
   // Prompt optimized for Paraná coast context with detailed Tide Table request
+  // UPDATED: Now strictly requesting official data from Marinha do Brasil
   const prompt = `
-    Atue como um especialista em oceanografia e meteorologia para o litoral do Paraná, Brasil.
+    Atue como um Oficial de Navegação da Marinha do Brasil e meteorologista especialista no litoral do Paraná.
     Hoje é dia: ${todayDate}.
     As coordenadas atuais são: Latitude ${coords.latitude}, Longitude ${coords.longitude}.
     
-    Use a ferramenta de busca para encontrar dados REAIS e ATUAIS.
+    Use a ferramenta de busca para encontrar dados OFICIAIS. 
+    PRIORIDADE TOTAL PARA FONTES DA: MARINHA DO BRASIL (DHN) ou PORTO DE PARANAGUÁ.
+    
     Eu preciso de:
     1. Temperatura atual (ex: 28°C).
     2. Condição do tempo (ex: Ensolarado, Nublado, Chuva).
     3. Altura das ondas aproximada no litoral do PR hoje.
     4. Horário do pôr do sol HOJE para estas coordenadas (Fuso Horário de Brasília GMT-3). Seja preciso.
     5. Índice UV máximo previsto para hoje (ex: 8 - Muito Alto).
-    6. TÁBUA DE MARÉS COMPLETA DAS 24 HORAS PARA O DIA DE HOJE (${todayDate}) no Porto de Paranaguá ou Pontal do Sul.
+    6. TÁBUA DE MARÉS OFICIAL E COMPLETA DAS 24 HORAS PARA O DIA DE HOJE (${todayDate}) baseada no PORTO DE PARANAGUÁ (Referência Oficial).
        IMPORTANTE: Liste TODOS os picos (geralmente são 4 eventos: 2 Altas e 2 Baixas nas 24h). Não omita as marés da tarde/noite.
 
     Responda APENAS com um JSON válido (sem markdown block) no seguinte formato estrito:
@@ -48,7 +51,7 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
       "waveHeight": "string",
       "sunset": "HH:MM",
       "uvIndex": "string",
-      "tideSummary": "string (resumo curto)",
+      "tideSummary": "string (resumo curto, ex: Maré de Sizígia)",
       "tideEvents": [
         { "time": "HH:MM", "height": "0.0m", "type": "Alta" },
         { "time": "HH:MM", "height": "0.0m", "type": "Baixa" },
