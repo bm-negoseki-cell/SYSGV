@@ -55,13 +55,13 @@ function App() {
   };
 
   const handleCheckOut = async () => {
-    // AUTOMATIC EXPORT: Generate CSV for the current shift's incidents
+    // AUTOMATIC EXPORT: Generate CSV for the current shift
     try {
       if (activeCheckIn) {
         const sessionReports = reports.filter(r => r.checkInId === activeCheckIn.id);
+        const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
         
-        // Always generate report on checkout, even if empty (to log the shift hours)
-        // Using semicolon (;) as delimiter for Excel compatibility in Brazil
+        // 1. Prepare CSV Content (For Local Download / Backup File)
         const headers = ['Data/Hora', 'Posto', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
         const rows = sessionReports.map(r => [
           new Date(r.timestamp).toLocaleString('pt-BR'),
@@ -72,18 +72,17 @@ function App() {
           r.victim?.name || '',
           r.victim?.age || '',
           r.victim?.gender || '',
-          r.notes ? r.notes.replace(/"/g, '""').replace(/\n/g, ' ') : '' // Escape quotes and newlines
-        ].map(field => `"${field}"`)); // Quote all fields
+          r.notes ? r.notes.replace(/"/g, '""').replace(/\n/g, ' ') : '' 
+        ].map(field => `"${field}"`)); 
 
         const csvBody = [headers.join(';'), ...rows.map(r => r.join(';'))].join("\n");
-        
-        const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
         const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
         const fileName = `Turno_${safePostName}_${dateStr}.csv`;
 
-        // Upload to Central (Google Drive/Gmail) + Force Local Download
+        // Upload to Central (Fast mode, only CSV backup)
         await uploadToCentral(fileName, csvBody);
-        alert("Turno finalizado. O relatório foi gerado e salvo.");
+        
+        alert("Turno finalizado. Dados salvos e sincronizados.");
       }
     } catch (error) {
       console.error("Falha na exportação automática:", error);
@@ -127,6 +126,7 @@ function App() {
         <ActivityLog 
           reports={reports}
           checkIns={checkIns}
+          currentCheckInId={currentCheckInId}
         />
       )}
     </Layout>

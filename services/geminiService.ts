@@ -23,35 +23,40 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
   }
 
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  const todayDate = new Date().toLocaleDateString('pt-BR');
   
   // Prompt optimized for Paraná coast context with detailed Tide Table request
   const prompt = `
     Atue como um especialista em oceanografia e meteorologia para o litoral do Paraná, Brasil.
+    Hoje é dia: ${todayDate}.
     As coordenadas atuais são: Latitude ${coords.latitude}, Longitude ${coords.longitude}.
     
-    Pesquise e forneça as condições atuais para este local exato.
+    Use a ferramenta de busca para encontrar dados REAIS e ATUAIS.
     Eu preciso de:
     1. Temperatura atual (ex: 28°C).
     2. Condição do tempo (ex: Ensolarado, Nublado, Chuva).
-    3. Altura das ondas aproximada.
-    4. Horário do pôr do sol hoje (ex: 18:45).
+    3. Altura das ondas aproximada no litoral do PR hoje.
+    4. Horário do pôr do sol HOJE para estas coordenadas (Fuso Horário de Brasília GMT-3). Seja preciso.
     5. Índice UV máximo previsto para hoje (ex: 8 - Muito Alto).
-    6. TÁBUA DE MARÉS COMPLETA PARA HOJE: Liste todos os horários de maré Alta e Baixa para o dia de hoje no porto mais próximo (Paranaguá ou Pontal do Sul).
+    6. TÁBUA DE MARÉS COMPLETA DAS 24 HORAS PARA O DIA DE HOJE (${todayDate}) no Porto de Paranaguá ou Pontal do Sul.
+       IMPORTANTE: Liste TODOS os picos (geralmente são 4 eventos: 2 Altas e 2 Baixas nas 24h). Não omita as marés da tarde/noite.
 
     Responda APENAS com um JSON válido (sem markdown block) no seguinte formato estrito:
     {
       "temperature": "string",
       "condition": "string",
       "waveHeight": "string",
-      "sunset": "string",
+      "sunset": "HH:MM",
       "uvIndex": "string",
-      "tideSummary": "string (resumo ex: Baixa 10h, Alta 16h)",
+      "tideSummary": "string (resumo curto)",
       "tideEvents": [
+        { "time": "HH:MM", "height": "0.0m", "type": "Alta" },
+        { "time": "HH:MM", "height": "0.0m", "type": "Baixa" },
         { "time": "HH:MM", "height": "0.0m", "type": "Alta" },
         { "time": "HH:MM", "height": "0.0m", "type": "Baixa" }
       ]
     }
-    Ordene os eventos de maré por horário.
+    Ordene os eventos de maré por horário cronológico.
   `;
 
   try {

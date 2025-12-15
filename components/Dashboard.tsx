@@ -294,12 +294,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
     }
   };
 
-  // Helper to filter tide events for shift hours (08:00 - 19:00)
+  // Helper to filter tide events for display
+  // Expanded range to ensure user sees tides before shift start and after shift end (06:00 - 21:00)
   const getShiftTideEvents = (events: TideEvent[] | undefined) => {
     if (!events) return [];
     return events.filter(e => {
       // Assuming e.time is "HH:MM"
-      return e.time >= "08:00" && e.time <= "19:00";
+      return e.time >= "06:00" && e.time <= "21:00";
     });
   };
 

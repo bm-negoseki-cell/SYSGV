@@ -18,15 +18,23 @@ export const Layout: React.FC<LayoutProps> = ({
       <header className="bg-blue-900 text-white p-4 shadow-md sticky top-0 z-50">
         <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
           <div className="flex items-center gap-3">
-            {/* Stylized Wave Icon - Custom SVG matching reference */}
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-blue-200 shadow-sm overflow-hidden p-1">
-               <svg viewBox="0 0 100 100" className="w-full h-full text-blue-700" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                 {/* Main Wave Body */}
-                 <path d="M10,85 C15,80 20,75 25,78 C35,85 45,60 55,45 C65,30 80,20 90,35 C95,42 92,55 85,60 C80,63 75,55 80,45 C82,40 85,38 88,38 C82,28 70,30 60,40 C50,50 40,75 30,80 C20,85 10,85 10,85 Z" />
-                 {/* The Curl/Lip */}
-                 <path d="M90,35 C80,10 50,15 35,40 C25,55 20,70 15,85 C15,85 5,85 2,80 C5,60 20,30 40,15 C60,0 85,5 90,35 Z" />
-                 {/* Internal Detail/Foam */}
-                 <path d="M45,35 C55,25 70,22 80,32 C75,28 65,28 55,38 C50,42 48,40 45,35 Z" fill="currentColor" opacity="0.8"/>
+            {/* Boia de Salvamento Icon - Significant and Recognizable */}
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-red-500 shadow-sm overflow-hidden p-1 relative">
+               <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                 {/* Main Red Ring */}
+                 <circle cx="50" cy="50" r="45" fill="#dc2626" />
+                 
+                 {/* Inner Hole (White) */}
+                 <circle cx="50" cy="50" r="22" fill="white" />
+                 
+                 {/* White Bands (Safety Markings) */}
+                 <path d="M46 5 H54 V28 H46 Z" fill="white" />
+                 <path d="M46 72 H54 V95 H46 Z" fill="white" />
+                 <path d="M5 46 H28 V54 H5 Z" fill="white" />
+                 <path d="M72 46 H95 V54 H72 Z" fill="white" />
+
+                 {/* Rope Details (Thin dashed line) */}
+                 <circle cx="50" cy="50" r="38" fill="none" stroke="white" strokeWidth="2" strokeDasharray="8 6" opacity="0.8" />
                </svg>
             </div>
             <div>

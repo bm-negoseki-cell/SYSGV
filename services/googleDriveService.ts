@@ -4,9 +4,14 @@
  * Conectado ao Google Apps Script para backup automático no Google Drive e Gmail.
  */
 
-// URL do Webhook configurada pelo usuário
+// URL do Webhook configurada
 const CENTRAL_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby4H-zhiZ6ejhiHN6JEKTlAHfBXyKHim3w6p6wEfEY1NDodimkcsG-5IEJgqZCm-Cd0/exec'; 
 
+/**
+ * Envia dados para o servidor.
+ * @param fileName Nome do arquivo para backup local e drive (CSV).
+ * @param csvContent Conteúdo do arquivo CSV.
+ */
 export const uploadToCentral = async (fileName: string, csvContent: string): Promise<boolean> => {
   // 1. ALWAYS Force Local Download first (Critical Data Safety)
   // Isso garante que o guarda-vidas tenha o arquivo mesmo se ficar sem internet.
@@ -29,30 +34,34 @@ export const uploadToCentral = async (fileName: string, csvContent: string): Pro
 
   // 2. Upload to Central Server (Google Drive/Gmail via Apps Script)
   if (CENTRAL_WEBHOOK_URL) {
-    try {
-      // Usamos 'no-cors' pois o Google Apps Script não suporta CORS padrão facilmente para POST
-      // Isso significa que enviaremos os dados ("fire and forget").
-      // O browser vai enviar a requisição, mas não conseguiremos ler a resposta de sucesso/falha do Google.
-      // Assumimos sucesso se não houver erro de rede.
-      await fetch(CENTRAL_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8', // Apps Script lê melhor como text/plain no corpo
-        },
-        body: JSON.stringify({
-          filename: fileName,
-          content: csvContent,
-          timestamp: new Date().toISOString()
-        }),
-        mode: 'no-cors' 
-      });
-      console.log("Dados enviados para o servidor central (Google Drive/Gmail).");
-      return true;
-    } catch (error) {
-      console.error("Erro ao enviar para o servidor central:", error);
-      // Não lançamos erro para o usuário final, pois o download local já garantiu os dados.
-      return false;
-    }
+    // OTIMIZAÇÃO DE PERFORMANCE (Fire-and-Forget):
+    // Não usamos 'await' no fetch para não bloquear a interface do usuário.
+    // O usuário percebe o encerramento como "imediato".
+    // A flag 'keepalive: true' garante que o envio termine mesmo se o app fechar.
+    
+    const payload = {
+      filename: fileName,
+      content: csvContent, 
+      timestamp: new Date().toISOString()
+    };
+
+    fetch(CENTRAL_WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      cache: 'no-cache',
+      credentials: 'omit',
+      redirect: 'follow',
+      keepalive: true, 
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(() => console.log("Upload em background iniciado."))
+    .catch((error) => console.error("Erro no upload em background:", error));
+
+    // Retornamos true imediatamente para liberar a UI
+    return true;
   } else {
     console.log("URL do Webhook não configurada. Apenas salvo localmente.");
     return true; 
