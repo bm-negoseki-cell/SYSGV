@@ -6,10 +6,11 @@ export interface Coordinates {
 export interface CheckInRecord {
   id: string;
   timestamp: string;
-  checkOutTimestamp?: string; // New field for shift end
+  checkOutTimestamp?: string;
   location: Coordinates;
-  postName: string; // e.g., "Posto Matinhos 01"
-  shift?: 'MANHA' | 'TARDE'; // Shift definition
+  postName: string;
+  shift?: 'MANHA' | 'TARDE';
+  userName?: string; // Added for supervisor to know who is there
 }
 
 export interface VictimData {
@@ -25,8 +26,8 @@ export interface IncidentReport {
   timestamp: string;
   type: 'ORIENTACAO' | 'ADVERTENCIA' | 'AGUA_VIVA' | 'RESGATE' | 'AFOGAMENTO';
   count: number;
-  drowningGrade?: 1 | 2 | 3 | 4 | 5 | 6; // Only for AFOGAMENTO
-  victim?: VictimData; // Only for serious incidents
+  drowningGrade?: 1 | 2 | 3 | 4 | 5 | 6;
+  victim?: VictimData;
   notes?: string;
 }
 
@@ -38,9 +39,9 @@ export interface TideEvent {
 
 export interface WeatherInfo {
   temperature: string;
-  condition: string; // e.g., "Ensolarado"
-  tide: string; // Summary string
-  tideEvents?: TideEvent[]; // Detailed table
+  condition: string;
+  tide: string;
+  tideEvents?: TideEvent[];
   waveHeight: string;
   sunset?: string;
   uvIndex?: string;
@@ -52,4 +53,5 @@ export enum ViewState {
   DASHBOARD = 'DASHBOARD',
   FORM = 'FORM',
   HISTORY = 'HISTORY',
+  SUPERVISOR = 'SUPERVISOR'
 }

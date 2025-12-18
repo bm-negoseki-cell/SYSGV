@@ -3,11 +3,14 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { IncidentForm } from './components/IncidentForm';
 import { ActivityLog } from './components/ActivityLog';
+import { SupervisorDashboard } from './components/SupervisorDashboard';
+import { SupervisorLogin } from './components/SupervisorLogin';
 import { CheckInRecord, IncidentReport, ViewState, Coordinates } from './types';
 import { uploadToCentral } from './services/googleDriveService';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
+  const [isSupervisorAuth, setIsSupervisorAuth] = useState(false);
   
   // State for data persistence
   const [checkIns, setCheckIns] = useState<CheckInRecord[]>(() => {
@@ -43,17 +46,12 @@ function App() {
 
   const activeCheckIn = checkIns.find(c => c.id === currentCheckInId) || null;
 
-  // Helper to determine shift based on current time
   const getShiftType = (date: Date): 'MANHA' | 'TARDE' => {
     const hour = date.getHours();
     const minutes = date.getMinutes();
-    
-    // Turno Manhã: Até 13:30
-    // Se for antes das 13h OU (são 13h E minutos < 30) -> Manhã
     if (hour < 13 || (hour === 13 && minutes < 30)) {
       return 'MANHA';
     }
-    // Caso contrário -> Tarde
     return 'TARDE';
   };
 
@@ -73,16 +71,12 @@ function App() {
   };
 
   const handleCheckOut = async () => {
-    // AUTOMATIC EXPORT: Generate CSV for the current shift
     try {
       if (activeCheckIn) {
         const sessionReports = reports.filter(r => r.checkInId === activeCheckIn.id);
         const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-        
-        // Include Shift in Filename
         const currentShift = activeCheckIn.shift || getShiftType(new Date(activeCheckIn.timestamp));
 
-        // 1. Prepare CSV Content (For Local Download / Backup File)
         const headers = ['Data/Hora', 'Posto', 'Turno', 'Tipo', 'Qtd', 'Grau', 'Vitima_Nome', 'Vitima_Idade', 'Vitima_Sexo', 'Obs'];
         const rows = sessionReports.map(r => [
           new Date(r.timestamp).toLocaleString('pt-BR'),
@@ -99,21 +93,15 @@ function App() {
 
         const csvBody = [headers.join(';'), ...rows.map(r => r.join(';'))].join("\n");
         const safePostName = activeCheckIn.postName.replace(/[^a-z0-9]/gi, '_');
-        
-        // Example: Turno_MANHA_PGV_Matinhos_01_20-12-2024.csv
         const fileName = `Turno_${currentShift}_${safePostName}_${dateStr}.csv`;
 
-        // Upload to Central (Fast mode, only CSV backup)
         await uploadToCentral(fileName, csvBody);
-        
-        alert(`Turno ${currentShift} finalizado. Dados salvos e sincronizados.`);
+        alert(`Turno ${currentShift} finalizado e sincronizado.`);
       }
     } catch (error) {
-      console.error("Falha na exportação automática:", error);
-      alert("Erro ao gerar relatório automático.");
+      console.error("Erro na sincronização:", error);
     }
 
-    // Update the current check-in with the checkout timestamp
     setCheckIns(prev => prev.map(c => 
       c.id === currentCheckInId 
         ? { ...c, checkOutTimestamp: new Date().toISOString() }
@@ -152,6 +140,17 @@ function App() {
           checkIns={checkIns}
           currentCheckInId={currentCheckInId}
         />
+      )}
+
+      {currentView === ViewState.SUPERVISOR && (
+        isSupervisorAuth ? (
+          <SupervisorDashboard onLogout={() => setIsSupervisorAuth(false)} />
+        ) : (
+          <SupervisorLogin 
+            onLoginSuccess={() => setIsSupervisorAuth(true)} 
+            onCancel={() => setCurrentView(ViewState.DASHBOARD)} 
+          />
+        )
       )}
     </Layout>
   );

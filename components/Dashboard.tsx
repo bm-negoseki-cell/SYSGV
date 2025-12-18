@@ -50,6 +50,24 @@ const WEATHER_CACHE_KEY = 'gv_weather_cache';
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 Hour
 // Update interval: 2 Hours (as requested)
 const UPDATE_INTERVAL_MS = 2 * 60 * 60 * 1000; 
+const MAX_DISTANCE_METERS = 250; // Radius for allowed check-in (Visual only now)
+
+// Haversine formula to calculate distance between two points in meters
+const getDistanceFromLatLonInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371e3; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in meters
+};
+
+const deg2rad = (deg: number) => {
+  return deg * (Math.PI / 180);
+};
 
 export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn, onCheckOut }) => {
   const [loadingLoc, setLoadingLoc] = useState(false);
@@ -61,6 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
   const [isSelectingPost, setIsSelectingPost] = useState(false);
   const [tempCoords, setTempCoords] = useState<Coordinates | null>(null);
   const [selectedPost, setSelectedPost] = useState<string>("");
+  const [selectionError, setSelectionError] = useState<string | null>(null); // New state for modal errors
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutWarningMsg, setCheckoutWarningMsg] = useState("");
   
@@ -127,6 +146,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
             .addTo(map)
             .bindPopup("Sua Localização")
             .openPopup();
+          
+          // Draw a circle indicating the allowed area
+          L.circle([tempCoords.latitude, tempCoords.longitude], {
+            color: 'green',
+            fillColor: '#22c55e',
+            fillOpacity: 0.1,
+            radius: MAX_DISTANCE_METERS
+          }).addTo(map);
         }
 
         // Create Markers and Calculate Bounds
@@ -142,6 +169,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
           marker.addTo(markersGroup); // Add to group for bounds calculation
           marker.on('click', () => {
             setSelectedPost(post.name);
+            setSelectionError(null); // Clear error on new selection
             map.setView([post.lat, post.lng], 13);
           });
           marker.bindPopup(`<b>${post.name}</b>`);
@@ -176,6 +204,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
 
   // Sync selectedPost with Map popup if selected via list
   useEffect(() => {
+    if (isSelectingPost) {
+      // Clear error when changing selection via list
+      setSelectionError(null);
+    }
     if (isSelectingPost && mapInstanceRef.current && selectedPost) {
       const post = POSTS_DATA.find(p => p.name === selectedPost);
       if (post) {
@@ -262,6 +294,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
         setTempCoords(coords);
         setLoadingLoc(false);
         setIsSelectingPost(true);
+        setSelectionError(null);
       },
       (err) => {
         setError("Erro ao obter localização. Verifique as permissões.");
@@ -272,6 +305,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
 
   const confirmPostSelection = () => {
     if (tempCoords && selectedPost) {
+      // GEOFENCING CHECK
+      const targetPost = POSTS_DATA.find(p => p.name === selectedPost);
+      if (!targetPost) return;
+
+      const distance = getDistanceFromLatLonInMeters(
+        tempCoords.latitude, 
+        tempCoords.longitude, 
+        targetPost.lat, 
+        targetPost.lng
+      );
+
+      // DISABLED FOR TESTING - UNCOMMENT TO RE-ENABLE GEOFENCING
+      /*
+      if (distance > MAX_DISTANCE_METERS) {
+        setSelectionError(`Você está a ${Math.round(distance)} metros deste posto. O limite para check-in é de ${MAX_DISTANCE_METERS} metros.`);
+        return;
+      }
+      */
+      console.log(`[TESTING] Distance to post: ${Math.round(distance)}m. Allowed.`);
+
       onCheckIn(tempCoords, selectedPost);
       // Try to load weather immediately after check-in
       loadWeather(tempCoords);
@@ -279,6 +332,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
       setIsSelectingPost(false);
       setTempCoords(null);
       setSelectedPost("");
+      setSelectionError(null);
       // Ensure map is cleaned
       if(mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -291,6 +345,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
     setIsSelectingPost(false);
     setTempCoords(null);
     setSelectedPost("");
+    setSelectionError(null);
     if(mapInstanceRef.current) {
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
@@ -419,24 +474,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentCheckIn, onCheckIn,
               </div>
             </div>
 
-            <div className="p-4 border-t border-gray-100 bg-white rounded-b-xl flex gap-3">
-              <button 
-                onClick={cancelSelection}
-                className="flex-1 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={confirmPostSelection}
-                disabled={!selectedPost}
-                className={`flex-1 py-3 font-bold text-white rounded-lg shadow-md transition-all ${
-                  selectedPost 
-                    ? 'bg-blue-600 hover:bg-blue-700 active:scale-95' 
-                    : 'bg-gray-300 cursor-not-allowed'
-                }`}
-              >
-                Confirmar
-              </button>
+            <div className="p-4 border-t border-gray-100 bg-white rounded-b-xl flex flex-col gap-3">
+              {selectionError && (
+                <div className="bg-red-50 text-red-700 p-2 rounded text-xs font-bold border border-red-200 text-center animate-pulse">
+                  {selectionError}
+                </div>
+              )}
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={cancelSelection}
+                  className="flex-1 py-3 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmPostSelection}
+                  disabled={!selectedPost}
+                  className={`flex-1 py-3 font-bold text-white rounded-lg shadow-md transition-all ${
+                    selectedPost 
+                      ? 'bg-blue-600 hover:bg-blue-700 active:scale-95' 
+                      : 'bg-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  Confirmar
+                </button>
+              </div>
             </div>
           </div>
         </div>

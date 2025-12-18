@@ -25,41 +25,35 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   const todayDate = new Date().toLocaleDateString('pt-BR');
   
-  // Prompt optimized for Paraná coast context with detailed Tide Table request
-  // UPDATED: Now strictly requesting official data from Marinha do Brasil
+  // Prompt optimized for SINGLE SOURCE extraction
   const prompt = `
-    Atue como um Oficial de Navegação da Marinha do Brasil e meteorologista especialista no litoral do Paraná.
-    Hoje é dia: ${todayDate}.
-    As coordenadas atuais são: Latitude ${coords.latitude}, Longitude ${coords.longitude}.
+    Tarefa: Extrair dados oceanográficos e meteorológicos para Paranaguá (PR), Brasil.
+    Data alvo: ${todayDate}.
     
-    Use a ferramenta de busca para encontrar dados OFICIAIS. 
-    PRIORIDADE TOTAL PARA FONTES DA: MARINHA DO BRASIL (DHN) ou PORTO DE PARANAGUÁ.
+    REGRA DE FONTE ÚNICA:
+    Para garantir a precisão e consistência dos dados, você deve extrair as informações EXCLUSIVAMENTE do site "tabuademares.com".
     
-    Eu preciso de:
-    1. Temperatura atual (ex: 28°C).
-    2. Condição do tempo (ex: Ensolarado, Nublado, Chuva).
-    3. Altura das ondas aproximada no litoral do PR hoje.
-    4. Horário do pôr do sol HOJE para estas coordenadas (Fuso Horário de Brasília GMT-3). Seja preciso.
-    5. Índice UV máximo previsto para hoje (ex: 8 - Muito Alto).
-    6. TÁBUA DE MARÉS OFICIAL E COMPLETA DAS 24 HORAS PARA O DIA DE HOJE (${todayDate}) baseada no PORTO DE PARANAGUÁ (Referência Oficial).
-       IMPORTANTE: Liste TODOS os picos (geralmente são 4 eventos: 2 Altas e 2 Baixas nas 24h). Não omita as marés da tarde/noite.
+    Instrução de Busca:
+    1. Utilize a ferramenta de busca para: "site:tabuademares.com tábua de marés clima Paranaguá ${todayDate}".
 
-    Responda APENAS com um JSON válido (sem markdown block) no seguinte formato estrito:
+    Extraia os dados encontrados neste resultado específico e responda estritamente neste JSON:
     {
-      "temperature": "string",
-      "condition": "string",
-      "waveHeight": "string",
-      "sunset": "HH:MM",
-      "uvIndex": "string",
-      "tideSummary": "string (resumo curto, ex: Maré de Sizígia)",
+      "temperature": "Temperatura do ar atual (ex: 28°C)",
+      "condition": "Condição do céu (ex: Ensolarado)",
+      "waveHeight": "Altura das ondas (ex: 0.8m)",
+      "sunset": "Horário do pôr do sol hoje (HH:MM)",
+      "uvIndex": "Índice UV máximo previsto",
+      "tideSummary": "Coeficiente de maré ou estado atual (ex: Coef. 78 alto)",
       "tideEvents": [
-        { "time": "HH:MM", "height": "0.0m", "type": "Alta" },
-        { "time": "HH:MM", "height": "0.0m", "type": "Baixa" },
         { "time": "HH:MM", "height": "0.0m", "type": "Alta" },
         { "time": "HH:MM", "height": "0.0m", "type": "Baixa" }
       ]
     }
-    Ordene os eventos de maré por horário cronológico.
+
+    REGRAS DE EXTRAÇÃO:
+    - Em "tideEvents", liste TODOS os horários de maré (Picos de Alta e Baixa) para o dia de HOJE.
+    - O site tabuademares.com apresenta uma tabela clara. Copie os dados de lá.
+    - Se não conseguir acessar este site específico, retorne o JSON com campos vazios ou nulos, mas NÃO use outras fontes.
   `;
 
   try {
@@ -68,6 +62,8 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
+        // Very low temperature for strict extraction
+        temperature: 0.1, 
       },
     });
 
@@ -84,7 +80,7 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
         console.error("Failed to parse JSON from Gemini", e);
         data = {
           temperature: "--",
-          condition: "Erro ao obter dados",
+          condition: "Erro ao ler dados",
           tideSummary: "N/D",
           waveHeight: "N/D",
           sunset: "--:--",
@@ -103,7 +99,7 @@ export const fetchCoastalConditions = async (coords: Coordinates): Promise<Weath
     return {
       temperature: data.temperature || "--",
       condition: data.condition || "Indisponível",
-      tide: data.tideSummary || "Consulte a tabela oficial",
+      tide: data.tideSummary || "Fonte: Tábua de Marés",
       tideEvents: Array.isArray(data.tideEvents) ? data.tideEvents : [],
       waveHeight: data.waveHeight || "--",
       sunset: data.sunset || "--:--",
